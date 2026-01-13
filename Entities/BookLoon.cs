@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 public class BookLoon
 {
     public int Id {get;set;}
