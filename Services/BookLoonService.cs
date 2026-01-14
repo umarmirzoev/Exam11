@@ -2,19 +2,29 @@ using Dapper;
 using Npgsql;
 using Microsoft.AspNetCore.Mvc.Routing;
 using System.Net;
-public class BookLoonService(ApplicationDBContext applicationDbContext): IBookLoonService
+public class BookLoonService(ApplicationDBContext applicationDbContext,ILogger<BookLoonService> logger): IBookLoonService
 {
     private readonly ApplicationDBContext _dbContext = applicationDbContext;
+    private readonly ILogger<BookLoonService> _logger = logger;
 
     //Add
     public async Task<Response<string>> AddBookLoonAsync(BookLoon bookLoon)
     {
+        
+        _logger.LogInformation("Ading new BookLoon:");
         using var conn = _dbContext.Connection();
         var query = "insert into bookLoon(id,bookId,usersId) values(@id,@bookId,@usersId)";
         var res = await conn.ExecuteAsync(query, new {id = bookLoon.Id,bookId=bookLoon.BookId,usersId=bookLoon.UsersId});
-        return res==0
-        ? new Response<string>(HttpStatusCode.InternalServerError, "Something went wrong!")
-        : new Response<string>(HttpStatusCode.OK, "BookLoon added successfully!");
+        if(res==0)
+        {
+            _logger.LogWarning("Something went wrong while adding book");
+            return new Response<string>(HttpStatusCode.InternalServerError, "Something went wrong!");
+        }
+        else
+        {
+         _logger.LogInformation("Nothing went wrong");   
+        return  new Response<string>(HttpStatusCode.OK, "BookLoon added successfully!");
+        }
     }
     //Delete
     public async Task<Response<string>> DeleteAsync(int BookLoonId)
@@ -23,9 +33,16 @@ public class BookLoonService(ApplicationDBContext applicationDbContext): IBookLo
         using var context = _dbContext.Connection();
         var query = "delete from bookLoon where id = @id";
         var res = await context.ExecuteAsync(query,new{id=BookLoonId});
-        return res==0
-            ?new Response<string>(HttpStatusCode.InternalServerError, "BookLoon data not deleted!")
-            :new Response<string>(HttpStatusCode.OK, "BookLoon data successfully deleted!");
+         if(res==0)
+            {
+                _logger.LogWarning("Something went wrong while deleting book");
+                return new Response<string>(HttpStatusCode.InternalServerError, "BookLoon data not deleted!");
+            }  
+        else
+            {
+              _logger.LogInformation("Nothing went wrong");  
+            return new Response<string>(HttpStatusCode.OK, "BookLoon data successfully deleted!");
+            }
         }
         catch(Exception ex)
         {
@@ -37,19 +54,11 @@ public class BookLoonService(ApplicationDBContext applicationDbContext): IBookLo
     //GetbyId
     public async Task<Response<BookLoon>> GetBookLoonByIdAsync(int BookLoonId)
     {
-        try{
-        using var conn = _dbContext.Connection();
-        var query = "select * from bookLoon where id = @id";
-        var result = await conn.QueryFirstOrDefaultAsync<BookLoon>(query, new{id=BookLoonId});
-        return result==null
-                ?new Response<BookLoon>(HttpStatusCode.InternalServerError, "BookLoon not found!")
-                :new Response<BookLoon>(HttpStatusCode.OK, "BookLoon found!", result);
-        }
-        catch(Exception ex)
-        {
-            System.Console.WriteLine(ex);
-            return new Response<BookLoon>(HttpStatusCode.InternalServerError, "Internal Server Error");
-        }
+         _logger.LogInformation("Searching Book by id is processing...");
+        var conn = _dbContext.Connection();
+        var query = "select * from Book where id = @id";
+        var res = await conn.QueryFirstOrDefaultAsync(query,new{id = BookLoonId});
+        return new Response<BookLoon>(HttpStatusCode.OK, "The data: ", res);
     }
     //Get
     public async Task<List<BookLoon>> GetBookLoonAsync()
@@ -68,9 +77,16 @@ public class BookLoonService(ApplicationDBContext applicationDbContext): IBookLo
             using var context = _dbContext.Connection();
             var query = "update bookLoon set bookId=@bookId,usersId=@usersId where id = @id";
             var result = await context.ExecuteAsync(query, new{bookId = bookLoon.BookId, usersId=bookLoon.UsersId, id = bookLoon.Id});
-            return result==0
-                ?new Response<string>(HttpStatusCode.InternalServerError, "BookLoon data not updated!")
-                :new Response<string>(HttpStatusCode.OK, "BookLoon data successfully updated!");
+            if(result==0)
+            {
+                _logger.LogWarning("Something went wrong while update book");
+                 return new Response<string>(HttpStatusCode.InternalServerError, "BookLoon data not updated!");
+            }  
+            else
+            {
+                _logger.LogInformation("Nothing went wrong");
+                return new Response<string>(HttpStatusCode.OK, "BookLoon data successfully updated!");
+            }  
         }
         catch(Exception ex)
         {
