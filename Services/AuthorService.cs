@@ -52,22 +52,11 @@ public class AuthorService(ApplicationDBContext applicationDbContext,ILogger<Aut
     //GetbyId
     public async Task<Response<Author>> GetAuthorByIdAsync(int AuthorId)
     {
-        try{
-        using var conn = _dbContext.Connection();
-        var query = "select * from author where id = @id";
-        var result = await conn.QueryFirstOrDefaultAsync<Author>(query, new{id=AuthorId});       
-        if(result==null)
-            {
-                _logger.LogInformation("");
-              return new Response<Author>(HttpStatusCode.InternalServerError, "Author not found!");
-            }      
-            else
-            {
-                _logger.LogInformation("");
-                return new Response<Author>(HttpStatusCode.OK, "Author found!", result);
-            }
-        
-        }
+     _logger.LogInformation("Searching Book by id is processing...");
+        var conn = _dbContext.Connection();
+        var query = "select * from Book where id = @id";
+        var res = await conn.QueryFirstOrDefaultAsync(query,new{id =AuthorId});
+        return new Response<Author>(HttpStatusCode.OK, "The data: ", res);
     }
     //Get
     public async Task<List<Author>> GetAuthorAsync()
